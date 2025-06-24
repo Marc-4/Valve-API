@@ -3,9 +3,10 @@ import Valve from "../models/Valve";
 
 const router = Router();
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const valves = await Valve.find();
+    const { id } = req.params;
+    const valves = await Valve.findOne({ valve_id: id });
     res.status(200).json({
       status: "OK",
       payload: {
