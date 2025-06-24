@@ -1,16 +1,16 @@
 import { model, Schema } from "mongoose";
 
 export interface IValve extends Document {
-  valve_id: Schema.Types.ObjectId;
+  valve_id: string;
   current_position: number;
   status: "pending" | "moving" | "success" | "failed";
   mode: "auto" | "manual";
-  updated_at: Date;
+  updated_at: number;
 }
 
 const valveSchema = new Schema<IValve>({
   valve_id: {
-    type: Schema.Types.ObjectId,
+    type: String,
     required: true,
     ref: "Valve",
   },
@@ -29,11 +29,11 @@ const valveSchema = new Schema<IValve>({
     enum: ["auto", "manual"],
   },
   updated_at: {
-    type: Date,
+    type: Number,
     required: true,
-    default: Date.now,
+    default: Date.now(),
   },
 });
 
-const Valve = model<IValve>("Valve", valveSchema)
-export default Valve
+const Valve = model<IValve>("Valve", valveSchema);
+export default Valve;
