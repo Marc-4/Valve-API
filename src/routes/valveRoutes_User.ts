@@ -37,10 +37,10 @@ router.patch("/control/:id", async (req: Request, res: Response) => {
         payload: { message: "Position out of bounds" },
       });
     }
-    
+
     //find valve
     const valve = await Valve.findOne({ valve_id: id });
-    
+
     if (!valve) {
       return res.status(404).json({
         status: "ERR",
@@ -48,7 +48,7 @@ router.patch("/control/:id", async (req: Request, res: Response) => {
       });
     }
 
-    //valve cannot be moved while pending 
+    //valve cannot be moved while pending
     if (valve.status === "pending") {
       return res.status(400).json({
         status: "ERR",
@@ -92,10 +92,66 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
         .json({ status: "ERR", payload: { message: "Invalid status" } });
     }
 
-    const valve = await Valve.findOneAndUpdate(
-      { valve_id: id },
+    const valve = await Valve.findOne({ valve_id: id });
+
+    if (!valve) {
+      return res
+        .status(404)
+        .json({ status: "ERR", payload: { message: "Valve not found" } });
+    }
+
+    if (
+      (valve.status === "pending" && status != "moving") ||
+      (valve.status === "moving" &&
+        (status != "success" || status != "failed")) ||
+      ((valve.status === "success" || valve.status === "failed") &&
+        status != "pending")
+    ) {
+      return res.status(400).json({
+        status: "ERR",
+        payload: { message: "Status must be sequential" },
+      });
+    }
+
+    valve.updateOne(
       {
         status,
+        updated_at: Date.now(),
+      },
+      { new: true }
+    );
+
+    return res.status(200).json({ status: "OK", payload: valve });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ status: "ERR", payload: { message: "Internal Server Error" } });
+  }
+});
+
+//@ts-ignore
+router.patch("/mode/:id", async (req: Request, res: Response) => {
+  try {
+    const { mode } = req.body;
+    const { id } = req.params;
+    if (mode !== "automatic" || mode !== "manual") {
+      return res
+        .status(400)
+        .json({ status: "ERR", payload: { message: "Invalid mode" } });
+    }
+
+    const valve = await Valve.findOne({ valve_id: id });
+
+    if (!valve) {
+      return res
+        .status(404)
+        .json({ status: "ERR", payload: { message: "Valve not found" } });
+    }
+
+    valve.updateOne(
+      {
+        mode,
         updated_at: Date.now(),
       },
       { new: true }
@@ -116,5 +172,4 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
       .json({ status: "ERR", payload: { message: "Internal Server Error" } });
   }
 });
-
 export default router;
