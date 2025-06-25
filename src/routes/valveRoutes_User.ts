@@ -58,14 +58,11 @@ router.patch("/control/:id", async (req: Request, res: Response) => {
       });
     }
 
-    valve.updateOne(
-      {
-        current_position: position,
-        status: "pending",
-        updated_at: Date.now(),
-      },
-      { new: true }
-    );
+    valve.current_position = position;
+    valve.status = "pending";
+    valve.updated_at = Date.now();
+
+    valve.save();
 
     return res.status(200).json({ status: "OK", payload: valve });
   } catch (error) {
@@ -113,13 +110,10 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
       });
     }
 
-    valve.updateOne(
-      {
-        status,
-        updated_at: Date.now(),
-      },
-      { new: true }
-    );
+    valve.status = status;
+    valve.updated_at = Date.now();
+
+    valve.save();
 
     return res.status(200).json({ status: "OK", payload: valve });
   } catch (error) {
@@ -149,13 +143,10 @@ router.patch("/mode/:id", async (req: Request, res: Response) => {
         .json({ status: "ERR", payload: { message: "Valve not found" } });
     }
 
-    valve.updateOne(
-      {
-        mode,
-        updated_at: Date.now(),
-      },
-      { new: true }
-    );
+    valve.mode = mode;
+    valve.updated_at = Date.now();
+
+    valve.save();
 
     if (!valve) {
       return res.status(400).json({
@@ -172,4 +163,51 @@ router.patch("/mode/:id", async (req: Request, res: Response) => {
       .json({ status: "ERR", payload: { message: "Internal Server Error" } });
   }
 });
+
+//@ts-ignore
+router.post("/", async (req: Request, res: Response) => {
+  try {
+    const { valve_id, current_position, status, mode } = req.body;
+
+    if (
+      !valve_id ||
+      typeof current_position !== "number" ||
+      !["pending", "moving", "success", "failed"].includes(status) ||
+      !["auto", "manual"].includes(mode)
+    ) {
+      return res.status(400).json({
+        status: "ERR",
+        payload: { message: "Invalid or missing fields" },
+      });
+    }
+
+    const existing = await Valve.findOne({ valve_id: valve_id });
+
+    if (existing) {
+      return res.status(400).json({
+        status: "ERR",
+        payload: { message: "Valve with valve_id " + valve_id + " exists" },
+      });
+    }
+
+    const newValve = new Valve({
+      valve_id,
+      current_position,
+      status,
+      mode,
+      updated_at: Date.now(),
+    });
+
+    const savedValve = await newValve.save();
+
+    return res.status(201).json({ status: "OK", payload: savedValve });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: "ERR",
+      payload: { message: "Internal Server Error" },
+    });
+  }
+});
+
 export default router;
