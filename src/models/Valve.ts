@@ -3,8 +3,8 @@ import { model, Schema } from "mongoose";
 export interface IValve extends Document {
   valve_id: string;
   current_position: number;
-  status: "pending" | "moving" | "success" | "failed";
-  mode: "auto" | "manual";
+  status: "PENDING" | "MOVING" | "success" | "FAILED";
+  mode: "AUTO" | "MANUAL";
   updated_at: number;
 }
 
@@ -20,13 +20,13 @@ const valveSchema = new Schema<IValve>({
   },
   status: {
     type: String,
-    enum: ["pending", "moving", "success", "failed"],
+    enum: ["PENDING", "MOVING", "success", "FAILED"],
     required: true,
-    default: "pending",
+    default: "PENDING",
   },
   mode: {
     type: String,
-    enum: ["auto", "manual"],
+    enum: ["AUTO", "MANUAL"],
   },
   updated_at: {
     type: Number,

@@ -49,8 +49,8 @@ router.post("/", async (req: Request, res: Response) => {
     if (
       !valve_id ||
       typeof current_position !== "number" ||
-      !["pending", "moving", "success", "failed"].includes(status) ||
-      !["auto", "manual"].includes(mode)
+      !["PENDING", "MOVING", "success", "FAILED"].includes(status) ||
+      !["AUTO", "MANUAL"].includes(mode)
     ) {
       return res.status(400).json({
         status: "ERR",
@@ -111,18 +111,18 @@ router.patch("/control/:id", async (req: Request, res: Response) => {
       });
     }
 
-    //valve cannot be moved while pending
-    if (valve.status === "pending") {
+    //valve cannot be moved while PENDING
+    if (valve.status === "PENDING") {
       return res.status(400).json({
         status: "ERR",
         payload: {
-          message: "Cannot send command while valve status is pending",
+          message: "Cannot send command while valve status is PENDING",
         },
       });
     }
 
     valve.current_position = position;
-    valve.status = "pending";
+    valve.status = "PENDING";
     valve.updated_at = Date.now();
 
     valve.save();
@@ -142,10 +142,10 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
     const { status } = req.body;
     const { id } = req.params;
     if (
-      status !== "pending" ||
-      status !== "moving" ||
-      status !== "success" ||
-      status !== "failed"
+      status !== "PENDING" &&
+      status !== "MOVING" &&
+      status !== "success" &&
+      status !== "FAILED"
     ) {
       return res
         .status(400)
@@ -161,11 +161,11 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
     }
 
     if (
-      (valve.status === "pending" && status != "moving") ||
-      (valve.status === "moving" &&
-        (status != "success" || status != "failed")) ||
-      ((valve.status === "success" || valve.status === "failed") &&
-        status != "pending")
+      (valve.status === "PENDING" && status != "MOVING") ||
+      (valve.status === "MOVING" &&
+        (status != "success" && status != "FAILED")) ||
+      ((valve.status === "success" || valve.status === "FAILED") &&
+        status != "PENDING")
     ) {
       return res.status(400).json({
         status: "ERR",
@@ -192,7 +192,7 @@ router.patch("/mode/:id", async (req: Request, res: Response) => {
   try {
     const { mode } = req.body;
     const { id } = req.params;
-    if (mode !== "automatic" || mode !== "manual") {
+    if (mode !== "AUTO" && mode !== "MANUAL") {
       return res
         .status(400)
         .json({ status: "ERR", payload: { message: "Invalid mode" } });
