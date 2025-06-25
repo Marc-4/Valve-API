@@ -3,6 +3,23 @@ import Valve from "../models/Valve";
 
 const router = Router();
 
+//@ts-ignore
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const valves = await Valve.find();
+
+    return res.status(200).json({ status: "OK", payload: valves });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      status: "error",
+      payload: {
+        message: "Internal Server Error",
+      },
+    });
+  }
+});
+
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
