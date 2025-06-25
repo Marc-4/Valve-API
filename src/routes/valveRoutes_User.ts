@@ -49,7 +49,7 @@ router.post("/", async (req: Request, res: Response) => {
     if (
       !valve_id ||
       typeof current_position !== "number" ||
-      !["PENDING", "MOVING", "success", "FAILED"].includes(status) ||
+      !["PENDING", "MOVING", "SUCCESS", "FAILED"].includes(status) ||
       !["AUTO", "MANUAL"].includes(mode)
     ) {
       return res.status(400).json({
@@ -144,7 +144,7 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
     if (
       status !== "PENDING" &&
       status !== "MOVING" &&
-      status !== "success" &&
+      status !== "SUCCESS" &&
       status !== "FAILED"
     ) {
       return res
@@ -163,8 +163,8 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
     if (
       (valve.status === "PENDING" && status != "MOVING") ||
       (valve.status === "MOVING" &&
-        (status != "success" && status != "FAILED")) ||
-      ((valve.status === "success" || valve.status === "FAILED") &&
+        (status != "SUCCESS" && status != "FAILED")) ||
+      ((valve.status === "SUCCESS" || valve.status === "FAILED") &&
         status != "PENDING")
     ) {
       return res.status(400).json({
