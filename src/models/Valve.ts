@@ -1,20 +1,26 @@
 import { model, Schema } from "mongoose";
 
 export interface IValve extends Document {
-  valve_id: string;
-  current_position: number;
+  deviceId: string;
+  deviceType: "VALVE" | "OTHER";
+  assignedRTU: number;
+  setting: number;
   status: "PENDING" | "MOVING" | "SUCCESS" | "FAILED";
   mode: "AUTO" | "MANUAL";
   updated_at: number;
 }
 
 const valveSchema = new Schema<IValve>({
-  valve_id: {
+  deviceId: {
     type: String,
     required: true,
     ref: "Valve",
   },
-  current_position: {
+  assignedRTU: {
+    type: Number,
+    required: true,
+  },
+  setting: {
     type: Number,
     required: true,
   },

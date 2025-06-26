@@ -23,7 +23,7 @@ router.get("/", async (req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const valves = await Valve.findOne({ valve_id: id });
+    const valves = await Valve.findOne({ deviceId: id });
     res.status(200).json({
       status: "OK",
       payload: {
@@ -44,13 +44,16 @@ router.get("/:id", async (req: Request, res: Response) => {
 //@ts-ignore
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { valve_id, current_position, status, mode } = req.body;
+    const { deviceId, deviceType, assignedRTU, setting, status, mode } =
+      req.body;
 
     if (
-      !valve_id ||
-      typeof current_position !== "number" ||
+      !deviceId ||
+      typeof assignedRTU !== "number" ||
+      typeof setting !== "number" ||
       !["PENDING", "MOVING", "SUCCESS", "FAILED"].includes(status) ||
-      !["AUTO", "MANUAL"].includes(mode)
+      !["AUTO", "MANUAL"].includes(mode) ||
+      !["VALVE", "OTHER"].includes(deviceType)
     ) {
       return res.status(400).json({
         status: "ERR",
@@ -58,18 +61,20 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
-    const existing = await Valve.findOne({ valve_id: valve_id });
+    const existing = await Valve.findOne({ deviceId: deviceId });
 
     if (existing) {
       return res.status(400).json({
         status: "ERR",
-        payload: { message: "Valve with valve_id " + valve_id + " exists" },
+        payload: { message: "Valve with deviceId " + deviceId + " exists" },
       });
     }
 
     const newValve = new Valve({
-      valve_id,
-      current_position,
+      deviceId,
+      deviceType,
+      assignedRTU,
+      setting,
       status,
       mode,
       updated_at: Date.now(),
@@ -102,7 +107,7 @@ router.patch("/control/:id", async (req: Request, res: Response) => {
     }
 
     //find valve
-    const valve = await Valve.findOne({ valve_id: id });
+    const valve = await Valve.findOne({ deviceId: id });
 
     if (!valve) {
       return res.status(404).json({
@@ -121,7 +126,7 @@ router.patch("/control/:id", async (req: Request, res: Response) => {
       });
     }
 
-    valve.current_position = position;
+    valve.setting = position;
     valve.status = "PENDING";
     valve.updated_at = Date.now();
 
@@ -152,7 +157,7 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
         .json({ status: "ERR", payload: { message: "Invalid status" } });
     }
 
-    const valve = await Valve.findOne({ valve_id: id });
+    const valve = await Valve.findOne({ deviceId: id });
 
     if (!valve) {
       return res
@@ -163,7 +168,8 @@ router.patch("/status/:id", async (req: Request, res: Response) => {
     if (
       (valve.status === "PENDING" && status != "MOVING") ||
       (valve.status === "MOVING" &&
-        (status != "SUCCESS" && status != "FAILED")) ||
+        status != "SUCCESS" &&
+        status != "FAILED") ||
       ((valve.status === "SUCCESS" || valve.status === "FAILED") &&
         status != "PENDING")
     ) {
@@ -198,7 +204,7 @@ router.patch("/mode/:id", async (req: Request, res: Response) => {
         .json({ status: "ERR", payload: { message: "Invalid mode" } });
     }
 
-    const valve = await Valve.findOne({ valve_id: id });
+    const valve = await Valve.findOne({ deviceId: id });
 
     if (!valve) {
       return res
